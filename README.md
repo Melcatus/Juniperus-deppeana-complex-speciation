@@ -9,7 +9,7 @@ Abstract:
 
 ### Data characteristics
 - Genotype By Sequencing
-- Pair-end reads
+- Paired-end reads
 - PstI/MspI restriction enzyme
 - Illumina NovaSeq 6000
 #### Workflow and the necessary software
