@@ -1,1 +1,71 @@
-# Script to
+# Script to analyze read quality and cleaning, and make the variant calling
+## Sequencing quality analysis with fastqc
+for i in ../fastq/*.fastq.gz;
+do fastqc $i -o ../fastqcs
+done
+### Filter out low quality reads and adapters with TrimGalore
+for R in `ls ../fastq | grep -oE "\w*_" | uniq`;
+do ../TrimGalore-0.6.6/trim_galore --fastqc --paired --clip_R1 3 --clip_R2 3 --three_prime_clip_R1 3 --three_prime_clip_R2 3 --illumina --stringency 5  -o ../trim ../fastq/${R}1.fastq.gz ../fastq/${R}2.fastq.gz;
+done
+#### Align sequences to the reference genome with bwa
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do bwa mem -t 10 -M ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna ../trim/${R}1.fq.gz ../trim/${R}2.fq.gz > ../trim/${R}.sam ;
+done
+##### Sort reads
+# Convert aligment from sam to bam 
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do java -jar -Xmx16000M ../../../../picard.jar SamFormatConverter I=../trim/${R}.sam O=../trim/${R}.bam;
+done
+## Sorted both files 
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do java -jar -Xmx10000M ../../../../picard.jar SortSam I=../trim/${R}.bam O=../trim/${R}sorted.bam SO=coordinate;
+done
+### Add group
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do java -jar -Xmx10000M ../../../../picard.jar AddOrReplaceReadGroups I=../trim/${R}sorted.bam O=../trim/${R}_sorted_RG.bam ID=sample LB=Paired-end PL=Illumina PU=Unknown SM=sample;
+done
+# Index samples
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do samtools index ../trim/${R}sortedRG.bam;
+done
+## Create output directory to results from cleaning and trimming
+mkdir ../trim/next
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do mkdir ../trim/next/${R};
+done
+## Alignment quality analysis with Qualimap
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do ../../../../qualimap_v2.2.1/qualimap bamqc --java-mem-size=16G -bam ../trim/${R}sortedRG.bam -outdir ../trim/next/${R} -nw 400 -hm 3;
+done
+# Due to the size of the Juniperus genome and to facilitate file management, aligned sequences were extracted into new files
+# Extract mapped sequences
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do samtools view -b -F 4 ../trim/${R}sortedRG.bam > ../trim/${R}mapped.bam;
+done
+## Convert to fasta file
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do samtools fastq -1 ../trim/${R}1a.fq -2 ../trim/${R}2a.fq -N ../trim/${R}mapped.bam;
+done
+### Compress file 1
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do gzip -9 ../trim/${R}1a.fastq;
+done
+### Compress file 2
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do gzip -9 ../trim/${R}2a.fastq;
+done
+#### SNPs call 
+##### Search for variants with NGSEP
+java -jar -Xmx20000M ../../../../NGSEPcore_4.3.1.jar MultisampleVariantsDetector -maxAlnsPerStartPos 100 -minMQ 40 -r ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna -o junis.vcf ../trim/A01_mapped.bam ../trim/B01_mapped.bam ../trim/C01_mapped.bam ../trim/D01_mapped.bam ../trim/E01_mapped.bam ../trim/F01_mapped.bam ../trim/A02_mapped.bam ../trim/B02_mapped.bam ../trim/C02_mapped.bam ../trim/D02_mapped.bam ../trim/E02_mapped.bam ../trim/F02_mapped.bam ../trim/A03_mapped.bam ../trim/B03_mapped.bam ../trim/C03_mapped.bam ../trim/D03_mapped.bam ../trim/E03_mapped.bam ../trim/F03_mapped.bam ../trim/A04_mapped.bam ../trim/B04_mapped.bam ../trim/C04_mapped.bam ../trim/D04_mapped.bam ../trim/E04_mapped.bam ../trim/F04_mapped.bam ../trim/A05_mapped.bam ../trim/B05_mapped.bam ../trim/C05_mapped.bam ../trim/D05_mapped.bam ../trim/E05_mapped.bam ../trim/F05_mapped.bam ../trim/A06_mapped.bam ../trim/B06_mapped.bam ../trim/C06_mapped.bam ../trim/D06_mapped.bam ../trim/E06_mapped.bam ../trim/F06_mapped.bam ../trim/A07_mapped.bam ../trim/B07_mapped.bam ../trim/C07_mapped.bam ../trim/D07_mapped.bam ../trim/E07_mapped.bam ../trim/F07_mapped.bam ../trim/A08_mapped.bam ../trim/B08_mapped.bam ../trim/C08_mapped.bam ../trim/D08_mapped.bam ../trim/E08_mapped.bam ../trim/F08_mapped.bam ../trim/A09_mapped.bam ../trim/B09_mapped.bam ../trim/C09_mapped.bam ../trim/D09_mapped.bam ../trim/E09_mapped.bam ../trim/F09_mapped.bam ../trim/A10_mapped.bam ../trim/B10_mapped.bam ../trim/C10_mapped.bam ../trim/D10_mapped.bam ../trim/E10_mapped.bam ../trim/F10_mapped.bam ../trim/A11_mapped.bam ../trim/B11_mapped.bam ../trim/C11_mapped.bam ../trim/D11_mapped.bam ../trim/E11_mapped.bam ../trim/F11_mapped.bam ../trim/A12_mapped.bam ../trim/B12_mapped.bam ../trim/C12_mapped.bam ../trim/D12_mapped.bam ../trim/E12_mapped.bam ../trim/F12_mapped.bam
+
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do java -jar -Xmx20000M ../../../../NGSEPcore_4.3.1.jar SingleSampleVariantsDetector -maxAlnsPerStartPos 200 -minMQ 40 -sampleId ${R} -ploidy 2 -psp -r ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna -i ../trim/${R}mapped.bam -o ../trim/${R}snp.vcf;
+done
+##### Merge variants
+java -jar -Xmx20000M ../../../../NGSEPcore_4.3.1.jar MergeVariants -s ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna.fai -o junis2v2 ../trim/A01_snp.vcf.vcf ../trim/B01_snp.vcf.vcf ../trim/C01_snp.vcf.vcf ../trim/D01_snp.vcf.vcf ../trim/E01_snp.vcf.vcf ../trim/F01_snp.vcf.vcf ../trim/A02_snp.vcf.vcf ../trim/B02_snp.vcf.vcf ../trim/C02_snp.vcf.vcf ../trim/D02_snp.vcf.vcf ../trim/E02_snp.vcf.vcf ../trim/F02_snp.vcf.vcf ../trim/A03_snp.vcf.vcf ../trim/B03_snp.vcf.vcf ../trim/C03_snp.vcf.vcf ../trim/D03_snp.vcf.vcf ../trim/E03_snp.vcf.vcf ../trim/F03_snp.vcf.vcf ../trim/A04_snp.vcf.vcf ../trim/B04_snp.vcf.vcf ../trim/C04_snp.vcf.vcf ../trim/D04_snp.vcf.vcf ../trim/E04_snp.vcf.vcf ../trim/F04_snp.vcf.vcf ../trim/A05_snp.vcf.vcf ../trim/B05_snp.vcf.vcf ../trim/C05_snp.vcf.vcf ../trim/D05_snp.vcf.vcf ../trim/E05_snp.vcf.vcf ../trim/F05_snp.vcf.vcf ../trim/A06_snp.vcf.vcf ../trim/B06_snp.vcf.vcf ../trim/C06_snp.vcf.vcf ../trim/D06_snp.vcf.vcf ../trim/E06_snp.vcf.vcf ../trim/F06_snp.vcf.vcf ../trim/A07_snp.vcf.vcf ../trim/B07_snp.vcf.vcf ../trim/C07_snp.vcf.vcf ../trim/D07_snp.vcf.vcf ../trim/E07_snp.vcf.vcf ../trim/F07_snp.vcf.vcf ../trim/A08_snp.vcf.vcf ../trim/B08_snp.vcf.vcf ../trim/C08_snp.vcf.vcf ../trim/D08_snp.vcf.vcf ../trim/E08_snp.vcf.vcf ../trim/F08_snp.vcf.vcf ../trim/A09_snp.vcf.vcf ../trim/B09_snp.vcf.vcf ../trim/C09_snp.vcf.vcf ../trim/D09_snp.vcf.vcf ../trim/E09_snp.vcf.vcf ../trim/F09_snp.vcf.vcf ../trim/A10_snp.vcf.vcf ../trim/B10_snp.vcf.vcf ../trim/C10_snp.vcf.vcf ../trim/D10_snp.vcf.vcf ../trim/E10_snp.vcf.vcf ../trim/F10_snp.vcf.vcf ../trim/A11_snp.vcf.vcf ../trim/B11_snp.vcf.vcf ../trim/C11_snp.vcf.vcf ../trim/D11_snp.vcf.vcf ../trim/E11_snp.vcf.vcf ../trim/F11_snp.vcf.vcf ../trim/A12_snp.vcf.vcf ../trim/B12_snp.vcf.vcf ../trim/C12_snp.vcf.vcf ../trim/D12_snp.vcf.vcf ../trim/E12_snp.vcf.vcf ../trim/F12_snp.vcf.vcf ../trim/G01_snp.vcf.vcf ../trim/H01_snp.vcf.vcf ../trim/G02_snp.vcf.vcf ../trim/H02_snp.vcf.vcf ../trim/G03_snp.vcf.vcf ../trim/H03_snp.vcf.vcf ../trim/G04_snp.vcf.vcf ../trim/H04_snp.vcf.vcf ../trim/G05_snp.vcf.vcf ../trim/H05_snp.vcf.vcf ../trim/G06_snp.vcf.vcf ../trim/H06_snp.vcf.vcf ../trim/G07_snp.vcf.vcf ../trim/H07_snp.vcf.vcf ../trim/G08_snp.vcf.vcf ../trim/H08_snp.vcf.vcf ../trim/G09_snp.vcf.vcf ../trim/H09_snp.vcf.vcf ../trim/G10_snp.vcf.vcf ../trim/H10_snp.vcf.vcf ../trim/G11_snp.vcf.vcf ../trim/H11_snp.vcf.vcf ../trim/G12_snp.vcf.vcf ../trim/H12_snp.vcf.vcf
+##### Genotype variants
+for R in `ls ../trim | grep -oE "\w*_" | uniq`;
+do java -jar -Xmx20000M ../../../../NGSEPcore_4.3.1.jar SingleSampleVariantsDetector -maxAlnsPerStartPos 200 -minQuality 40 -sampleId ${R} -knownVariants junis2v2 -r ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna -i ../trim/${R}mapped.bam -o ../trim/${R}snp2;
+done
+##### Generate vfc file of population
+java -jar -Xmx20000M ../../../../NGSEPcore_4.3.1.jar VCFMerge -s ../reference/GCA_028749045.1_ASM2874904v1_genomic.fna.fai -o junis3v2.vcf ../trim/A01_snp2.vcf ../trim/B01_snp2.vcf ../trim/C01_snp2.vcf ../trim/D01_snp2.vcf ../trim/E01_snp2.vcf ../trim/F01_snp2.vcf ../trim/A02_snp2.vcf ../trim/B02_snp2.vcf ../trim/C02_snp2.vcf ../trim/D02_snp2.vcf ../trim/E02_snp2.vcf ../trim/F02_snp2.vcf ../trim/A03_snp2.vcf ../trim/B03_snp2.vcf ../trim/C03_snp2.vcf ../trim/D03_snp2.vcf ../trim/E03_snp2.vcf ../trim/F03_snp2.vcf ../trim/A04_snp2.vcf ../trim/B04_snp2.vcf ../trim/C04_snp2.vcf ../trim/D04_snp2.vcf ../trim/E04_snp2.vcf ../trim/F04_snp2.vcf ../trim/A05_snp2.vcf ../trim/B05_snp2.vcf ../trim/C05_snp2.vcf ../trim/D05_snp2.vcf ../trim/E05_snp2.vcf ../trim/F05_snp2.vcf ../trim/A06_snp2.vcf ../trim/B06_snp2.vcf ../trim/C06_snp2.vcf ../trim/D06_snp2.vcf ../trim/E06_snp2.vcf ../trim/F06_snp2.vcf ../trim/A07_snp2.vcf ../trim/B07_snp2.vcf ../trim/C07_snp2.vcf ../trim/D07_snp2.vcf ../trim/E07_snp2.vcf ../trim/F07_snp2.vcf ../trim/A08_snp2.vcf ../trim/B08_snp2.vcf ../trim/C08_snp2.vcf ../trim/D08_snp2.vcf ../trim/E08_snp2.vcf ../trim/F08_snp2.vcf ../trim/A09_snp2.vcf ../trim/B09_snp2.vcf ../trim/C09_snp2.vcf ../trim/D09_snp2.vcf ../trim/E09_snp2.vcf ../trim/F09_snp2.vcf ../trim/A10_snp2.vcf ../trim/B10_snp2.vcf ../trim/C10_snp2.vcf ../trim/D10_snp2.vcf ../trim/E10_snp2.vcf ../trim/F10_snp2.vcf ../trim/A11_snp2.vcf ../trim/B11_snp2.vcf ../trim/C11_snp2.vcf ../trim/D11_snp2.vcf ../trim/E11_snp2.vcf ../trim/F11_snp2.vcf ../trim/A12_snp2.vcf ../trim/B12_snp2.vcf ../trim/C12_snp2.vcf ../trim/D12_snp2.vcf ../trim/E12_snp2.vcf ../trim/F12_snp2.vcf ../trim/G01_snp2.vcf ../trim/H01_snp2.vcf ../trim/G02_snp2.vcf ../trim/H02_snp2.vcf ../trim/G03_snp2.vcf ../trim/H03_snp2.vcf ../trim/G04_snp2.vcf ../trim/H04_snp2.vcf ../trim/G05_snp2.vcf ../trim/H05_snp2.vcf ../trim/G06_snp2.vcf ../trim/H06_snp2.vcf ../trim/G07_snp2.vcf ../trim/H07_snp2.vcf ../trim/G08_snp2.vcf ../trim/H08_snp2.vcf ../trim/G09_snp2.vcf ../trim/H09_snp2.vcf ../trim/G10_snp2.vcf ../trim/H10_snp2.vcf ../trim/G11_snp2.vcf ../trim/H11_snp2.vcf ../trim/G12_snp2.vcf ../trim/H12_snp2.vcf 
