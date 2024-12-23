@@ -1,0 +1,20 @@
+//inputfile for the program ABCestimator
+estimationType standard
+//file with the simulations. Consists of first the parameters and then the stats. A header line is required!
+simName	MCMC_depp_sampling1.txt
+//file with obnserved statistics. A Header is required with names corresponding to the stats in the simfile!
+obsName	depp_completo.obs
+//columns containg parameters for which estimates will be produced
+params	14-26
+//number of simulations to estimate the GLM on
+numRetained	10000
+maxReadSims	100000
+//the width of the diracpeaks, affecting the smoothing..
+diracPeakWidth 0.01
+//number of points at which to estimate posterior density
+posteriorDensityPoints 200
+//should the statistics be standardized? values: 1 / 0 (default) 
+stadardizeStats 1
+//should the prior be written in a file? values: 0 (default) / 1
+writeRetained 1
+obsPValue	1000
