@@ -1,0 +1,24 @@
+##
+#renombrar las poblaciones, porque cada una se debe llamar del 1 al 0 SOLO CORRER UNA VEZ!!!!
+#sed -i 's/\b5\b/4/g' pops_deppeana_completo.txt
+#sed -i -e 's/\b1\b/0/g' pops_deppeana_SinG.txt
+#sed -i -e 's/\b2\b/1/g' pops_deppeana_SinG.txt
+#sed -i -e 's/\b3\b/2/g' pops_deppeana_SinG.txt
+#sed -i -e 's/\b4\b/3/g' pops_deppeana_SinG.txt
+#sed -i -e 's/\b5\b/4/g' pops_deppeana_SinG.txt
+#sed -i -e 's/\b2\b/0/g' pops_deppeana_SinDG.txt
+#sed -i -e 's/\b3\b/1/g' pops_deppeana_SinDG.txt
+#sed -i -e 's/\b4\b/2/g' pops_deppeana_SinDG.txt
+#sed -i -e 's/\b5\b/3/g' pops_deppeana_SinDG.txt
+
+
+# for file in *recode.vcf; do
+   file_name=$( basename $file)
+   file_base_name="${file_name%.recode.vcf}"
+      base_name="${file_base_name#LD_04_}"
+      mkdir $base_name
+  done 
+ 
+ #python ~/easySFS/easySFS.py -i LD_04_deppeana_completo.recode.vcf --prefix deppeana_completo -p pops_deppeana_completo.txt -o ./deppeana_completo -a --proj=11,18,16,6,43
+ #python ~/easySFS/easySFS.py -i LD_04_deppeana_SinG.recode.vcf --prefix deppeana_SinG -p pops_deppeana_SinG.txt -o ./deppeana_SinG -a --proj=18,16,6,28,15
+ python ~/easySFS/easySFS.py -i LD_04_deppeana_SinDG.recode.vcf --prefix deppeana_SinDG -p pops_deppeana_SinDG.txt -o ./deppeana_SinDG_interger -a --proj=16,6,28,15

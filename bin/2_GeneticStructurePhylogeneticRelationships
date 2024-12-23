@@ -1,0 +1,33 @@
+# Script to 
+
+vcf="junis3.renombrado.vcf.gz" #nuestro vcf
+id="newID.txt"
+
+# creamos una lista de cada grupo, es decir, una lista de los individuos por grupo 
+
+awk '{print $2}' $id  | grep 'JDD' > deppeana.txt
+awk '{print $2}' $id  | grep 'JDR' > robusta.txt
+awk '{print $2}' $id  | grep 'JDZ' > zacatecensis.txt
+awk '{print $2}' $id  | grep 'JG'  > gamboana.txt
+awk '{print $2}' $id  | grep 'JDE' > east.txt
+awk '{print $2}' $id  | grep 'JDP' > pachy.txt
+
+#vamos a crear un archivo vcf con todos los individuos, salvo los que vayamos
+#sumando o eliminando 
+
+#for the complete database
+vcftools --gzvcf $vcf --remove-indv JD-DSMF --remove-indv JF27 --maf 0.01 --max-alleles 2 --min-alleles 2 --thin 150 --hwe 0.00001 --min-meanDP 10 --max-missing 0.95 --out deppeana_completo --recode 
+
+#plink format
+vcftools --vcf deppeana_completo.recode.vcf --plink --chrom-map map_chrom.txt --out deppeana_completo
+
+#Only the deppeana complex
+vcftools --gzvcf $vcf --remove-indv JD-DSMF --remove-indv JF27 --remove gamboana.txt --maf 0.01 --max-alleles 2 --min-alleles 2 --thin 150 --hwe 0.00001 --min-meanDP 10 --max-missing 0.95 --out deppeana_SinG --recode 
+#plink format
+vcftools --vcf deppeana_SinG.recode.vcf --plink --chrom-map map_chrom.txt --out deppeana_SinG 
+#Deppeana complex WO TMVB
+vcftools --gzvcf $vcf --remove-indv JD-DSMF --remove-indv JF27 --remove gamboana.txt --remove deppeana.txt --maf 0.01 --max-alleles 2 --min-alleles 2 --thin 150 --hwe 0.00001 --min-meanDP 10 --max-missing 0.95 --out deppeana_SinDG --recode 
+#plink format
+vcftools --vcf deppeana_SinDG.recode.vcf --plink --chrom-map map_chrom.txt --out deppeana_SinDG
+# Only deppeana and gamboana 
+vcftools --gzvcf $vcf --remove-indv JD-DSMF --remove-indv JF27  --keep deppeana.txt --keep gamboana.txt --maf 0.01 --max-alleles 2 --min-alleles 2 --thin 150 --hwe 0.00001 --min-meanDP 10 --max-missing 0.95 --out depp_gamb --recode
