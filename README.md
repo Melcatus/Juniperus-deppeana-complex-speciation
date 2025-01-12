@@ -5,7 +5,7 @@ This repository contains the scripts that were used for the analysis of genetic 
 
 Authors: Rodrigo Martínez de León, Melania Vega, David S. Gernandt, Juan Pablo Jaramillo-Correa, Alejandra Moreno-Letelier
 
-Abstract:
+Abstract: Speciation is a central focus in evolutionary biology. Here, we investigate the divergence processes underlying genetic and taxonomic diversity within the *Juniperus deppeana* species complex. Using multiple species delimitation approaches, we identify the number of independent evolutionary lineages within the complex. Additionally, we apply Approximate Bayesian Computation to estimate posterior distributions of divergence times and population sizes. Our research identifies at least four distinct evolutionary lineages that diverged in the absence of gene flow, likely due to significant geographic barriers arising within a relatively brief period. Moreover, *Juniperus deppeana* represents a compelling case for the study of peripatric speciation and secondary contact.
 
 ### Data characteristics
 - Genotype By Sequencing
