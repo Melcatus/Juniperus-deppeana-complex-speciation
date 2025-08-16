@@ -1,0 +1,46 @@
+// Search ranges and rules file
+// ****************************
+[PARAMETERS]
+//#isInt? #name   #dist.#min  #max
+//all Ns are in number of haploid individuals
+0	LOG_0$	unif	3.7	5.3
+0	LOG_1$	unif	5	5.69
+0	LOG_2$	unif	5	5.47
+0	LOG_3$	unif	3.5	5.2
+0	LOG_4$	unif	5	5.69
+0	LOG_5$	unif	3	5.2
+0	LOG_T1$	unif	4	5.04
+0	LOG_T5$	unif	2.9	3.5
+0	LOG_T4$	unif	4	4.95
+0	LOG_T2$	unif	2.9	3.5
+0	LOG_T3$	unif	4	5.04
+0	MIG1$	unif	0.00005	0.0005
+0	MIG5$	unif	0.00005	0.0005
+0	LOGMIG$	unif	2.25	3.5
+0 LogMaxT$ unif 2.9	3.5
+0 CRIS$ unif -0.001 -0.0001
+0 bibi$ unif 0.1 0.9
+0 KD$ unif 0.1 0.79
+0 ES$ unif 2 6
+[RULES]
+LOG_T4$ > LOG_T1$
+LOG_T4$ > LOG_T3$
+LOG_T2$ > LOGMIG$
+LOG_T2$ > LOG_T5$
+LOG_T5$ > LOGMIG$
+LogMaxT$ > LOG_T5$
+[COMPLEX PARAMETERS]
+1	N0$ = pow10( LOG_0$ )
+1	N1$ = pow10( LOG_1$ )
+1	N2$ = pow10( LOG_2$ )
+1	N3$ = pow10( LOG_3$ )
+1	N4$ = pow10( LOG_4$ )
+1	N5$ = pow10( LOG_5$ )
+1	Tdiv1$ = pow10( LOG_T1$ )
+1	Tdiv2$ = pow10( LOG_T2$ )
+1	Tdiv3$ = pow10( LOG_T3$ )
+1	Tdiv4$ = pow10( LOG_T4$ )
+1	Tdiv5$ = pow10( LOG_T5$ )
+1	Tmig1end$ = pow10( LOGMIG$ )
+1 MaxT$ = pow10( LogMaxT$ )
+1 exp1$ = Tdiv3$ / 2

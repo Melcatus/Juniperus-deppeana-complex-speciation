@@ -1,0 +1,26 @@
+//----------------------------------------------------------------------
+//Inputfile to simulate contant size population with N and mu
+//----------------------------------------------------------------------
+samplerType MCMC
+
+estName depp_completo.est
+outName MCMC_depp
+calName calibration_sampling1.txt
+doBoxCox 1
+numCaliSims 8400
+obsName depp_completo.obs
+simDataName SIMINPUTNAME_1_1.arp
+launchAfterSim ./add_missing.sh
+tolerance 0.05
+rangeProp 0.5
+nbSims 100000
+mcmcSampling 5
+separateOutputFiles 0
+simulationProgram /home/rodrigo/Documentos/fsc26_linux64/fsc26
+simInputName depp_completo.par
+simParam #-i#SIMINPUTNAME#-n1#-g#-s#1742#-c0
+sumStatProgram ./arlsumstat
+sumStatParam SIMDATANAME#SSFILENAME#0#1
+writeHeader 1
+verbose
+

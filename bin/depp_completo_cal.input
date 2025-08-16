@@ -1,0 +1,21 @@
+//----------------------------------------------------------------------
+//Inputfile to simulate contant size population with N and mu
+//----------------------------------------------------------------------
+task simulate
+samplerType standard
+
+estName depp_completo.est
+outName calibration
+
+obsName depp_completo.obs
+simDataName SIMINPUTNAME_1_1.arp
+launchAfterSim ./add_missing.sh
+nbSims 10000
+simulationProgram /home/rodrigo/Documentos/fsc26_linux64/fsc26
+simInputName depp_completo.par
+simParam #-i#SIMINPUTNAME#-n1#-g#-s#1742#-c0
+sumStatProgram ./arlsumstat
+sumStatParam SIMDATANAME#SSFILENAME#0#1
+writeHeader 1
+verbose
+
